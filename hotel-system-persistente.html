@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Hotelero - Almacenamiento Permanente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 py-4">
+                <h1 class="text-2xl font-bold text-gray-900">Sistema Hotelero - Almacenamiento Permanente</h1>
+                <p class="text-gray-600 mt-1">Datos guardados automáticamente en tu navegador</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 py-8">
+            <!-- Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-sm font-medium text-gray-500">Total Habitaciones</h3>
+                    <p class="text-2xl font-bold text-gray-900 mt-2">75</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-sm font-medium text-gray-500">Reservas Activas</h3>
+                    <p class="text-2xl font-bold text-gray-900 mt-2" id="totalReservations">0</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-sm font-medium text-gray-500">Habitaciones Ocupadas</h3>
+                    <p class="text-2xl font-bold text-gray-900 mt-2" id="occupiedRooms">0</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-sm font-medium text-gray-500">Disponibles</h3>
+                    <p class="text-2xl font-bold text-gray-900 mt-2" id="availableRooms">75</p>
+                </div>
+            </div>
+
+            <!-- Registration Form -->
+            <div class="bg-white rounded-lg shadow p-6 mb-8">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Registrar Nuevo Huésped</h2>
+                <form id="guestForm" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Nombre Completo *</label>
+                            <input type="text" id="guestName" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Teléfono/Email *</label>
+                            <input type="text" id="guestContact" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Tipo de Habitación *</label>
+                            <select id="roomType" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                <option value="">Seleccionar...</option>
+                                <option value="sencilla">Sencilla (1 cama matrimonial)</option>
+                                <option value="doble">Doble (2 camas matrimoniales)</option>
+                                <option value="triple">Triple (3 camas matrimoniales)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Climatización *</label>
+                            <select id="climate" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                <option value="">Seleccionar...</option>
+                                <option value="ac">Aire Acondicionado</option>
+                                <option value="fan">Ventilador</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Fecha Entrada *</label>
+                            <input type="date" id="checkInDate" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                    </div>
+                    <div class="flex space-x-4">
+                        <button type="submit" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">
+                            Crear Reserva
+                        </button>
+                        <button type="button" onclick="exportData()" class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700">
+                            Exportar Datos
+                        </button>
+                        <button type="button" onclick="importData()" class="bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700">
+                            Importar Datos
+                        </button>
+                        <button type="button" onclick="clearAllData()" class="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700">
+                            Limpiar Todo
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Available Rooms -->
+            <div class="bg-white rounded-lg shadow p-6 mb-8">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Habitaciones Disponibles</h2>
+                <div id="availableRoomsList" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                </div>
+            </div>
+
+            <!-- Reservations List -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b">
+                    <h2 class="text-lg font-semibold text-gray-900">Reservas Activas</h2>
+                </div>
+                <div id="reservationsList" class="p-6">
+                    <p class="text-gray-500 text-center">Cargando reservas...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Configuración de habitaciones
+        const rooms = {
+            sencilla: {
+                withFan: [3, 5, 6, 7, 8, 9, 10, 11, 12, 15, 107, 110, 210, 211, 302, 306, 307, 308, 309, 310, 311, 312, 313, 314, 316, 319, 320, 321, 323, 324, 330],
+                withAC: [13, 14, 106, 114, 203, 205]
+            },
+            doble: {
+                withFan: [108, 208, 303, 304, 305, 315, 317, 318, 322, 328, 329],
+                withAC: [101, 105, 109, 112, 113, 207, 212, 213, 214]
+            },
+            triple: {
+                withFan: [301],
+                withAC: [102, 103, 104, 111, 202, 204, 206, 325, 326, 327]
+            }
+        };
+
+        const prices = {
+            sencilla: { withAC: 800, withFan: 600 },
+            doble: { withAC: 1200, withFan: 900 },
+            triple: { withAC: 1500, withFan: 1200 }
+        };
+
+        // Inicializar estado
+        let allRooms = [];
+        let reservations = [];
+
+        // Cargar datos desde localStorage
+        function loadData() {
+            const savedReservations = localStorage.getItem('hotelReservations');
+            const savedRooms = localStorage.getItem('hotelRooms');
+            
+            if (savedReservations) {
+                reservations = JSON.parse(savedReservations);
+            }
+            
+            initializeRooms();
+            updateStats();
+            renderReservations();
+            renderAvailableRooms();
+        }
+
+        // Guardar datos en localStorage
+        function saveData() {
+            localStorage.setItem('hotelReservations', JSON.stringify(reservations));
+            localStorage.setItem('hotelRooms', JSON.stringify(allRooms));
+        }
+
+        // Inicializar habitaciones
+        function initializeRooms() {
+            allRooms = [];
+            Object.keys(rooms).forEach(type => {
+                Object.keys(rooms[type]).forEach(climate => {
+                    rooms[type][climate].forEach(number => {
+                        allRooms.push({
+                            id: `${type.charAt(0).toUpperCase()}${number}`,
+                            number: number,
+                            type: type,
+                            hasAC: climate === 'withAC',
+                            occupied: false,
+                            price: prices[type][climate]
+                        });
+                    });
+                });
+            });
+
+            // Marcar ocupadas según reservas
+            reservations.forEach(reservation => {
+                const room = allRooms.find(r => r.id === reservation.room.id);
+                if (room) room.occupied = true;
+            });
+        }
+
+        // Actualizar estadísticas
+        function updateStats() {
+            const occupied = allRooms.filter(r => r.occupied).length;
+            document.getElementById('totalReservations').textContent = reservations.length;
+            document.getElementById('occupiedRooms').textContent = occupied;
+            document.getElementById('availableRooms').textContent = allRooms.length - occupied;
+        }
+
+        // Renderizar habitaciones disponibles
+        function renderAvailableRooms() {
+            const container = document.getElementById('availableRoomsList');
+            const available = allRooms.filter(r => !r.occupied);
+            
+            container.innerHTML = available.map(room => `
+                <div class="border rounded-lg p-3">
+                    <div class="font-semibold">Habitación ${room.number}</div>
+                    <div class="text-sm text-gray-600">${room.type} - ${room.hasAC ? 'A/C' : 'Ventilador'}</div>
+                    <div class="text-sm font-bold text-green-600">$${room.price} MXN</div>
+                </div>
+            `).join('');
+        }
+
+        // Renderizar reservas
+        function renderReservations() {
+            const container = document.getElementById('reservationsList');
+            
+            if (reservations.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center">No hay reservas activas</p>';
+                return;
+            }
+
+            container.innerHTML = reservations.map(reservation => `
+                <div class="border rounded-lg p-4 mb-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-semibold">${reservation.guest.name}</h4>
+                            <p class="text-sm text-gray-600">${reservation.guest.contact}</p>
+                            <p class="text-sm text-gray-600">Entrada: ${reservation.guest.checkInDate}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-semibold">Habitación ${reservation.room.number}</p>
+                            <p class="text-sm text-gray-600">${reservation.room.type} - ${reservation.room.hasAC ? 'A/C' : 'Ventilador'}</p>
+                            <p class="text-sm font-semibold text-green-600">$${reservation.room.price} MXN</p>
+                        </div>
+                    </div>
+                    <button onclick="cancelReservation(${reservation.id})" class="mt-2 text-red-600 text-sm hover:text-red-800">
+                        Cancelar Reserva
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Cancelar reserva
+        function cancelReservation(id) {
+            if (confirm('¿Estás seguro de cancelar esta reserva?')) {
+                reservations = reservations.filter(r => r.id !== id);
+                saveData();
+                loadData();
+            }
+        }
+
+        // Exportar datos
+        function exportData() {
+            const data = {
+                reservations: reservations,
+                exportDate: new Date().toISOString()
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'hotel-data.json';
+            a.click();
+        }
+
+        // Importar datos
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (data.reservations) {
+                            reservations = data.reservations;
+                            saveData();
+                            loadData();
+                            alert('Datos importados exitosamente');
+                        }
+                    } catch (error) {
+                        alert('Error al importar datos');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        // Limpiar todos los datos
+        function clearAllData() {
+            if (confirm('¿Estás seguro de limpiar TODOS los datos? Esta acción no se puede deshacer.')) {
+                localStorage.removeItem('hotelReservations');
+                localStorage.removeItem('hotelRooms');
+                reservations = [];
+                loadData();
+                alert('Todos los datos han sido eliminados');
+            }
+        }
+
+        // Manejar formulario
+        document.getElementById('guestForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('guestName').value;
+            const contact = document.getElementById('guestContact').value;
+            const roomType = document.getElementById('roomType').value;
+            const climate = document.getElementById('climate').value;
+            const checkInDate = document.getElementById('checkInDate').value;
+
+            const availableRooms = allRooms.filter(room => 
+                room.type === roomType && 
+                room.hasAC === (climate === 'ac') && 
+                !room.occupied
+            );
+
+            if (availableRooms.length === 0) {
+                alert('No hay habitaciones disponibles con esa configuración');
+                return;
+            }
+
+            const selectedRoom = availableRooms[0];
+            
+            const reservation = {
+                id: Date.now(),
+                guest: { name, contact, checkInDate },
+                room: selectedRoom
+            };
+
+            reservations.push(reservation);
+            saveData();
+            loadData();
+            
+            alert(`Reserva creada exitosamente. Habitación ${selectedRoom.number} asignada.`);
+            this.reset();
+        });
+
+        // Inicializar
+        document.getElementById('checkInDate').value = new Date().toISOString().split('T')[0];
+        loadData();
+    </script>
+</body>
+</html>
